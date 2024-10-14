@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hexbin Heatmap</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.47/vue.global.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.2/d3.min.js"></script>
+    <style>
+        #app {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Hexbin Heatmap</h1>
+        <div ref="chart"></div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const chart = ref(null);
+
+                onMounted(() => {
+                    const width = 600;
+                    const height = 400;
+                    const margin = { top: 20, right: 30, bottom: 30, left: 40 };
+
+                    const svg = d3.select(chart.value)
+                        .append("svg")
+                        .attr("width", width + margin.left + margin.right)
+                        .attr("height", height + margin.top + margin.bottom)
+                        .append("g")
+                        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+                    // Generate random data
+                    const data = Array.from({ length: 1000 }, () => ({
+                        x: Math.random() * 4 - 2,
+                        y: Math.random() * 4 - 2
+                    }));
+
+                    const x = d3.scaleLinear()
+                        .domain([-2, 4])
+                        .range([0, width]);
+
+                    const y = d3.scaleLinear()
+                        .domain([-2, 2])
+                        .range([height, 0]);
+
+                    svg.append("g")
+                        .attr("transform", `translate(0,${height})`)
+                        .call(d3.axisBottom(x));
+
+                    svg.append("g")
+                        .call(d3.axisLeft(y));
+
+                    const hexbin = d3.hexbin()
+                        .x(d => x(d.x))
+                        .y(d => y(d.y))
+                        .radius(10)
+                        .extent([[0, 0], [width, height]]);
+
+                    const color = d3.scaleSequential(d3.interpolateViridis)
+                        .domain([0, 20]);
+
+                    svg.append("clipPath")
+                        .attr("id", "clip")
+                        .append("rect")
+                        .attr("width", width)
+                        .attr("height", height);
+
+                    svg.append("g")
+                        .attr("clip-path", "url(#clip)")
+                        .selectAll("path")
+                        .data(hexbin(data))
+                        .enter().append("path")
+                        .attr("d", hexbin.hexagon())
+                        .attr("transform", d => `translate(${d.x},${d.y})`)
+                        .attr("fill", d => color(d.length))
+                        .attr("stroke", "#fff")
+                        .attr("stroke-width", "0.1");
+
+                    // Add color legend
+                    const legend = svg.append("g")
+                        .attr("transform", `translate(${width + 10}, 0)`);
+
+                    const legendScale = d3.scaleLinear()
+                        .domain([0, 20])
+                        .range([height, 0]);
+
+                    const legendAxis = d3.axisRight(legendScale)
+                        .ticks(5);
+
+                    legend.append("g")
+                        .call(legendAxis);
+
+                    const legendGradient = legend.append("defs")
+                        .append("linearGradient")
+                        .attr("id", "legend-gradient")
+                        .attr("x1", "0%")
+                        .attr("y1", "100%")
+                        .attr("x2", "0%")
+                        .attr("y2", "0%");
+
+                    legendGradient.selectAll("stop")
+                        .data(color.ticks().map((t, i, n) => ({ offset: `${100*i/n.length}%`, color: color(t) })))
+                        .enter().append("stop")
+                        .attr("offset", d => d.offset)
+                        .attr("stop-color", d => d.color);
+
+                    legend.append("rect")
+                        .attr("width", 20)
+                        .attr("height", height)
+                        .style("fill", "url(#legend-gradient)");
+
+                    legend.append("text")
+                        .attr("transform", "rotate(-90)")
+                        .attr("y", 30)
+                        .attr("dy", ".71em")
+                        .style("text-anchor", "end")
+                        .text("Count");
+                });
+
+                return { chart };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
