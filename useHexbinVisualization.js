@@ -38,6 +38,13 @@ export default function useHexbinVisualization() {
     const tooltip = d3.select("body").append("div")
       .attr("class", "tooltip")
       .style("opacity", 0)
+      .style("position", "absolute")
+      .style("background-color", "white")
+      .style("border", "solid")
+      .style("border-width", "1px")
+      .style("border-radius", "5px")
+      .style("padding", "10px")
+      .style("pointer-events", "none")
 
     const hexPaths = svg
       .selectAll("path")
@@ -58,8 +65,13 @@ export default function useHexbinVisualization() {
           .duration(200)
           .style("opacity", .9);
         tooltip.html(`ID: ${d.length}<br>Status: Level ${level}`)
-          .style("left", (event.pageX + 10) + "px")
-          .style("top", (event.pageY - 28) + "px");
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 28}px`);
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY - 28}px`);
       })
       .on("mouseout", () => {
         tooltip.transition()

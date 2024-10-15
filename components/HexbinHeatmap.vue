@@ -75,6 +75,7 @@ export default {
   overflow: visible;
   padding: 20px;
   box-sizing: content-box;
+  position: relative;  /* Add this line */
 }
 
 .legend-container {
@@ -84,7 +85,7 @@ export default {
   margin-bottom: 10px;
 }
 
-:deep(.tooltip) {
+:global(.tooltip) {  /* Change from :deep to :global */
   position: absolute;
   text-align: center;
   padding: 8px;
@@ -93,5 +94,6 @@ export default {
   border: 1px solid #aaa;
   border-radius: 8px;
   pointer-events: none;
+  z-index: 10;  /* Add this line */
 }
 </style>
